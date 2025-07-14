@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WeatherWise - Intelligence in Every Forecast</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Cloudy sky background image, fallback to gradient */
+            background: url('clouds-bg.jpg') center center / cover no-repeat fixed, linear-gradient(135deg, #aee1fa 0%, #e0eafc 60%, #b7cbe6 100%);
+            background-blend-mode: lighten;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            overflow-y: auto;
+            transition: background 1s ease-in-out;
+            padding: 2rem;
+            box-sizing: border-box;
+            animation: gradientShift 10s ease infinite alternate;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            /* Extremely subtle, small clouds at the very top */
+            background:
+                radial-gradient(circle at 10% 5%, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 40%, transparent 70%) 0 0 / 70px 22px no-repeat,
+                radial-gradient(circle at 30% 8%, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 40%, transparent 70%) 0 0 / 50px 16px no-repeat,
+                radial-gradient(circle at 60% 6%, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.012) 40%, transparent 70%) 0 0 / 60px 20px no-repeat,
+                radial-gradient(circle at 80% 10%, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0.008) 40%, transparent 70%) 0 0 / 55px 15px no-repeat;
+            opacity: 0.13;
+        }
+        body::after {
+            display: none !important;
+        }
+
+        /* Keyframe for general fade-in and slight slide-up */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Keyframe for a subtle pop-in effect, good for numbers */
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            80% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+
+        /* Gradient shift animation for background */
+        @keyframes gradientShift {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        /* Specific animations for weather types */
+        @keyframes clearSkyAnimation {
+            0% { background-position: 0% 0%; }
+            50% { background-position: 100% 100%; }
+            100% { background-position: 0% 0%; }
+        }
+
+        @keyframes cloudyAnimation {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        @keyframes rainyAnimation {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        @keyframes stormyAnimation {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        @keyframes snowyAnimation {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        @keyframes hazyAnimation {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3); /* Lighter spinner for dark backgrounds */
+            border-left-color: #34D399;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Input and Button Styles */
+        #cityInput, #geminiQueryInput {
+            transition: all 0.3s ease;
+            border-radius: 2rem; /* More rounded for bubbly effect */
+            background-color: rgba(255, 255, 255, 0.35); /* More transparent */
+            color: #333;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Softer, slightly larger shadow */
+            padding: 0.9rem 1.5rem; /* More padding for a softer look */
+            font-size: 1.1rem; /* Slightly larger font */
+            border: none; /* No default border */
+        }
+        #cityInput::placeholder, #geminiQueryInput::placeholder {
+            color: rgba(51, 51, 51, 0.7); /* Placeholder text color */
+        }
+        #cityInput:focus, #geminiQueryInput:focus {
+            outline: none; /* Remove default outline */
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.5); /* Softer green ring effect */
+            background-color: rgba(255, 255, 255, 0.45); /* Slightly less transparent on focus */
+        }
+        #fetchWeatherBtn, #getFarmingAdviceBtn, #askGeminiBtn {
+            background: linear-gradient(to right, #10B981, #059669); /* Button gradient */
+            border: none;
+            position: relative;
+            overflow: hidden;
+            border-radius: 2rem; /* More rounded for bubbly effect */
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25); /* More pronounced, but soft shadow */
+            color: #f0fdf4;
+            padding: 0.9rem 2rem; /* More padding for a softer look */
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        #fetchWeatherBtn:hover, #getFarmingAdviceBtn:hover, #askGeminiBtn:hover {
+            background: linear-gradient(to right, #059669, #047857); /* Darker gradient on hover */
+            transform: translateY(-2px) scale(1.02); /* Subtle lift on hover */
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+        }
+        #fetchWeatherBtn:active::after, #getFarmingAdviceBtn:active::after, #askGeminiBtn:active::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3); /* More visible ripple */
+            border-radius: 50%;
+            opacity: 0;
+            transform: translate(-50%, -50%);
+            animation: buttonRipple 0.4s ease-out forwards;
+        }
+        @keyframes buttonRipple {
+            from { width: 0; height: 0; opacity: 1; }
+            to { width: 200%; height: 200%; opacity: 0; }
+        }
+
+
+        /* Text and Icon Styles for main weather display */
+        #cityName, #temperature, #description,
+        #humidity, #windSpeed, #windGust, #cloudiness, #precipitation {
+            color: #FFFFFF; /* All main weather text is white */
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.3); /* Stronger shadow for readability on backgrounds */
+        }
+
+        #cityName {
+            font-size: 2.5rem; /* Larger city name */
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        #temperature {
+            font-size: 6rem; /* Very large temperature, like Xiaomi */
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            line-height: 1; /* Adjust line height to prevent extra space */
+        }
+        #description {
+            font-size: 1.8rem; /* Larger description */
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+        .grid p {
+            font-size: 1.1rem; /* Slightly larger for details */
+            font-weight: 500;
+        }
+        .grid span {
+            font-weight: 700; /* Bold values */
+        }
+
+        .summary-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+            color: #E0E0E0;
+            /* No hover effects as requested */
+        }
+
+        /* Weather Icon Styling */
+        #weatherIcon {
+            width: 100px; /* Even larger icon */
+            height: 100px;
+            margin: 0 auto 1rem auto;
+            animation: bounceIn 0.8s ease-out;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3)); /* Shadow for icon */
+        }
+
+        /* Style for individual sections (bubbly transparent boxes) */
+        #detailedFarmingSuggestions,
+        #farmingSummary,
+        #geminiOutputSection {
+            padding: 2rem; /* Increased padding for more bubbly feel */
+            margin-top: 2rem; /* Space between sections */
+            width: 100%;
+            max-width: 48rem;
+            box-sizing: border-box;
+            animation: fadeInUp 0.8s ease-out forwards;
+            opacity: 0;
+            border-radius: 2.5rem; /* Very rounded corners for "bubbly" sections */
+            background-color: rgba(255, 255, 255, 0.05); /* Even more transparent */
+            backdrop-filter: blur(30px); /* Significantly stronger frosted glass effect for mirror look */
+            -webkit-backdrop-filter: blur(30px); /* Safari support */
+            border: 1px solid rgba(255, 255, 255, 0.1); /* Very subtle border for inner boxes */
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25); /* Softer, larger shadow for sections */
+            color: #FFFFFF; /* White text for these sections */
+        }
+        #detailedFarmingSuggestions h3, #farmingSummary h3, #geminiOutputSection h3 {
+            color: #FFFFFF; /* White for sub-headings */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        #detailedFarmingSuggestions ul, #farmingSummary ul, #geminiOutputSection ul {
+            color: #F0F0F0; /* Slightly off-white for list items */
+        }
+        #geminiOutput p {
+            color: #F0F0F0; /* Text color for Gemini output */
+        }
+
+
+        /* Ensure input/button section also adapts */
+        .input-section {
+            max-width: 48rem;
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 2rem;
+            transition: top 0.8s ease-in-out, left 0.8s ease-in-out, transform 0.8s ease-in-out, max-width 0.8s ease-in-out, width 0.8s ease-in-out, padding 0.8s ease-in-out, background 0.8s ease-in-out, box-shadow 0.8s ease-in-out, border-radius 0.8s ease-in-out;
+            z-index: 20;
+            will-change: transform, opacity, background, box-shadow, padding, border-radius, max-width, width, top, left;
+        }
+
+        /* Adjust weatherDisplay itself to sit directly on body - NO outer box */
+        #weatherDisplay {
+            max-width: 48rem;
+            width: 100%;
+            padding: 0; /* Remove padding from outer container */
+            box-sizing: border-box;
+            margin-top: 4rem; /* Move content higher up the screen */
+            animation: fadeInUp 0.8s ease-out forwards;
+            opacity: 0;
+            background-color: transparent; /* Make background fully transparent */
+            backdrop-filter: none; /* Remove blur from outer container */
+            -webkit-backdrop-filter: none;
+            border: none; /* Remove border */
+            box-shadow: none; /* Remove shadow */
+            text-align: center; /* Ensure content is centered */
+        }
+
+        /* Apply fadeInUp to individual weather data points */
+        #weatherDisplay p, #weatherDisplay h2 {
+            animation: fadeInUp 0.6s ease-out forwards;
+            opacity: 0;
+        }
+        #weatherDisplay h3 {
+            color: #FFFFFF;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        #weatherDisplay ul {
+            color: #E0E0E0;
+        }
+
+        /* Add delays for sequential animation */
+        #cityName { animation-delay: 0.1s; }
+        #temperature { animation-delay: 0.2s; }
+        #description { animation-delay: 0.3s; }
+        #humidity { animation-delay: 0.4s; }
+        #windSpeed { animation-delay: 0.5s; }
+        #windGust { animation-delay: 0.6s; }
+        #cloudiness { animation-delay: 0.7s; }
+        #precipitation { animation-delay: 0.8s; }
+
+
+        /* Center content horizontally within the max-width */
+        .center-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* General heading style (removed from HTML, but kept here if needed for other elements) */
+        h1 {
+            color: #FFFFFF;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+        }
+
+        #errorMessage {
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+            color: #FFDDDD;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            font-size: 1.1rem;
+            display: flex; /* Use flexbox for alignment */
+            flex-direction: column; /* Stack children vertically */
+            align-items: center; /* Center horizontally */
+            gap: 0.75rem; /* Space between text and button */
+        }
+
+        /* Compass specific styles */
+        #compass-container { /* New container for compass and its label */
+            grid-column: 1 / -1; /* Span across all columns in the grid */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 1rem; /* Space from elements above */
+            margin-bottom: 0.5rem; /* Space from elements below */
+        }
+
+        #compass {
+            position: relative;
+            width: 100px; /* Further reduced size */
+            height: 100px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.08); /* More transparent compass base */
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.25); /* Inner and outer shadow for depth */
+            backdrop-filter: blur(20px); /* Frosted glass effect for compass */
+            -webkit-backdrop-filter: blur(20px);
+            overflow: hidden; /* Hide overflow for needle rotation */
+        }
+
+        /* Compass direction markings - now directly inside #compass */
+        .compass-direction {
+            position: absolute;
+            font-weight: bold;
+            font-size: 0.8em; /* Smaller font for directions */
+            color: #FFFFFF; /* White for all directions */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 18px; /* approximate width for text */
+            height: 18px; /* approximate height for text */
+        }
+        .compass-direction.north { top: 3px; left: calc(50% - 9px); color: #FF6347; } /* North in red */
+        .compass-direction.east { right: 3px; top: calc(50% - 9px); }
+        .compass-direction.south { bottom: 3px; left: calc(50% - 9px); }
+        .compass-direction.west { left: 3px; top: calc(50% - 9px); }
+
+
+        /* Wind needle (two-sided) */
+        #wind-needle {
+            position: absolute;
+            width: 2px; /* Thinner needle */
+            height: 40%; /* Length of one side of the needle */
+            background-color: #FF6347; /* Red for the main, "pointing" side */
+            top: 10%; /* Position from top to make it visually centered around the middle */
+            left: 50%;
+            transform-origin: bottom center; /* Pivot point at the bottom of this element */
+            transform: translateX(-50%) rotate(0deg); /* Initial rotation, updated by JS */
+            transition: transform 0.8s ease-out; /* Smooth rotation transition */
+            border-radius: 2px;
+            z-index: 2; /* On top of center dot */
+            box-shadow: 0 0 3px rgba(0,0,0,0.4); /* Subtle shadow for needle */
+        }
+        #wind-needle::after { /* The second "tail" needle, pointing opposite */
+            content: '';
+            position: absolute;
+            bottom: -100%; /* Extends downwards from the origin of the primary needle */
+            left: 0;
+            width: 100%; /* Same width as primary */
+            height: 100%; /* Same length as primary, creating a full two-sided needle */
+            background-color: rgba(255, 255, 255, 0.6); /* White/gray for the secondary side */
+            border-radius: 2px;
+        }
+
+        #compass-center {
+            position: absolute;
+            width: 8px; /* Smaller center dot */
+            height: 8px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            z-index: 3; /* On top of needle */
+            box-shadow: 0 0 3px rgba(0,0,0,0.3);
+        }
+
+        #compassLabel {
+            color: #FFFFFF;
+            font-size: 0.9em;
+            margin-top: 0.5rem; /* Space between compass and label */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        /* Header Styles */
+        .header {
+            text-align: center;
+            padding: 3rem 1rem;
+            margin-bottom: 2rem;
+            color: #FFFFFF;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+            animation: slideDown 0.8s ease-out;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .logo img {
+            width: 160px;
+            height: 160px;
+            border: none;
+            box-shadow: none;
+            background: none;
+            display: block;
+        }
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .brand-name {
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg,rgba(73,161,162,1) 40%,rgba(251,200,95,1) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+        .brand-tagline {
+            font-size: 1.7rem;
+            font-weight: 600;
+            background: linear-gradient(90deg, #f7971e 0%, #ffd200 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
+            font-style: italic;
+            margin-bottom: 0.5rem;
+        }
+        /* Removed .header-subtitle styling as the element is removed */
+
+        /* Feature Text Styling */
+        #featureText {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #0056b3; /* Changed to a darker blue for better visibility */
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+            height: 1.5em; /* Fixed height to prevent layout shifts */
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out; /* Smooth fade in/out */
+            margin-top: 1rem;
+            text-align: center; /* Center the text */
+            margin-left: auto; /* Center horizontally */
+            margin-right: auto; /* Center horizontally */
+            max-width: 48rem; /* Limit width for readability */
+        }
+        #featureText.fade-in {
+            opacity: 1;
+        }
+
+
+        .logo svg {
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover svg {
+            transform: scale(1.05);
+        }
+
+
+
+        /* Combined weather frame animation */
+        .weather-frame {
+            animation: frameRotate 20s linear infinite;
+        }
+
+        /* Dominant weather elements animation */
+        .weather-dominant {
+            transition: opacity 0.8s ease-in-out;
+        }
+
+        .weather-dominant.sun {
+            animation: dominantCycle 20s ease-in-out infinite;
+        }
+
+        .weather-dominant.cloud {
+            animation: dominantCycle 20s ease-in-out infinite;
+            animation-delay: 5s;
+        }
+
+        .weather-dominant.rain {
+            animation: dominantCycle 20s ease-in-out infinite;
+            animation-delay: 10s;
+        }
+
+        .weather-dominant.mist {
+            animation: dominantCycle 20s ease-in-out infinite;
+            animation-delay: 15s;
+        }
+
+        /* Circular arrangement animation */
+        .circle-arrangement {
+            animation: circleArrangement 20s ease-in-out infinite;
+            animation-delay: 20s;
+        }
+
+        @keyframes dominantCycle {
+            0%, 20% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            5%, 15% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            25%, 100% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+        }
+
+        @keyframes circleArrangement {
+            0%, 70% {
+                opacity: 0;
+                transform: scale(0.7);
+            }
+            75%, 95% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.7);
+            }
+        }
+
+        /* Combined frame rotation animation */
+        @keyframes frameRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .logo-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .brand-text {
+                text-align: center;
+            }
+            
+            .brand-name {
+                font-size: 2.5rem;
+            }
+            
+            .brand-tagline {
+                font-size: 1.1rem;
+            }
+            .logo img {
+                width: 100px;
+                height: 100px;
+            }
+        }
+        .weather-text {
+            color: rgba(73,161,162,1);
+            font-weight: 900;
+        }
+        .pro-text {
+            color: rgba(251,200,95,1);
+            font-weight: 900;
+        }
+
+        /* Initial state of logo header */
+        .logo-header {
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Center horizontally initially */
+            gap: 2.5rem;
+            transition: top 0.8s ease-in-out, left 0.8s ease-in-out, transform 0.8s ease-in-out, gap 0.8s ease-in-out, width 0.8s ease-in-out, height 0.8s ease-in-out, font-size 0.8s ease-in-out, letter-spacing 0.8s ease-in-out;
+            position: relative; /* Important for initial positioning */
+            z-index: 10;
+            will-change: transform, opacity, gap, top, left, width, height, font-size, letter-spacing;
+            margin-bottom: 1.5rem; /* Default margin */
+            transform-origin: top left; /* Added for smoother scaling to top-left */
+        }
+        .logo-header .logo img {
+            width: 160px;
+            height: 160px;
+            transition: width 0.8s ease-in-out, height 0.8s ease-in-out;
+        }
+        .logo-header .brand-name {
+            font-size: 4rem;
+            transition: font-size 0.8s ease-in-out, letter-spacing 0.8s ease-in-out;
+        }
+        /* Removed .header-subtitle styling as the element is removed */
+
+        /* State when body has 'scrolled-or-searched' class */
+        body.scrolled-or-searched .logo-header {
+            position: fixed;
+            top: 1.2rem;
+            left: 1.2rem;
+            gap: 0.3rem; /* Reduced gap */
+            transform: scale(0.68); /* Simplified transform */
+            background: none;
+            box-shadow: none;
+            filter: none;
+            margin-bottom: 0; /* Remove margin when fixed */
+        }
+        body.scrolled-or-searched .logo-header .logo img {
+            width: 60px;
+            height: 60px;
+        }
+        body.scrolled-or-searched .logo-header .brand-name {
+            font-size: 2.1rem;
+            letter-spacing: -0.01em;
+        }
+        /* Removed .header-subtitle logic as the element is removed */
+        body.scrolled-or-searched #searchBarSection {
+            position: fixed;
+            top: 1.2rem;
+            left: 50%;
+            transform: translateX(-50%) scale(0.93);
+            margin-bottom: 0; /* Remove margin when fixed */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* Add a subtle shadow when fixed */
+            background: rgba(255,255,255,0.92);
+            border-radius: 2rem;
+            padding: 0.5rem 1.5rem;
+            max-width: 36rem;
+            width: calc(100% - 2.4rem);
+            filter: none;
+            transition: top 0.8s ease-in-out, left 0.8s ease-in-out, transform 0.8s ease-in-out, max-width 0.8s ease-in-out, width 0.8s ease-in-out, padding 0.8s ease-in-out, background 0.8s ease-in-out, box-shadow 0.8s ease-in-out, border-radius 0.8s ease-in-out;
+            z-index: 30; /* Increased z-index for the fixed search bar */
+        }
+
+        /* Responsive adjustments for fixed elements */
+        @media (max-width: 600px) {
+            body.scrolled-or-searched .logo-header {
+                top: 0.5rem;
+                left: 0.5rem;
+                transform: scale(0.55);
+            }
+            body.scrolled-or-searched #searchBarSection {
+                top: 0.5rem;
+                left: 50%;
+                transform: translateX(-50%) scale(0.90);
+                max-width: 98vw;
+                padding: 0.3rem 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body class="p-4">
+    <!-- Header -->
+    <header class="header" id="mainHeader">
+        <div class="logo-header" id="logoHeader">
+            <div class="logo">
+                <img src="logo.png" alt="WeatherPro Logo" />
+            </div>
+            <div class="brand-text">
+                <h1 class="brand-name"><span class="weather-text">Weather</span><span class="pro-text">Pro</span></h1>
+            </div>
+        </div>
+        <!-- Removed header-subtitle -->
+    </header>
+
+    <div class="center-content">
+        <div class="flex flex-col sm:flex-row gap-4 mb-6 input-section" id="searchBarSection">
+            <input
+                type="text"
+                id="cityInput"
+                placeholder="Enter city name..."
+                list="citySuggestions"
+                class="flex-grow p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-700"
+            />
+            <datalist id="citySuggestions"></datalist>
+            <button
+                id="fetchWeatherBtn"
+                class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+            >
+                Get Weather
+            </button>
+        </div>
+
+        <div id="loadingIndicator" class="hidden flex justify-center items-center mb-4">
+            <div class="loading-spinner"></div>
+            <span class="ml-3 text-white text-opacity-80">Fetching weather...</span>
+        </div>
+
+        <div id="weatherDisplay" class="hidden">
+            <img id="weatherIcon" src="" alt="Weather Icon" class="mx-auto mb-4">
+            <h2 id="cityName" class="text-3xl font-bold mb-2"></h2>
+            <p id="temperature" class="text-5xl font-extrabold mb-4"></p>
+            <p id="description" class="text-2xl capitalize mb-4"></p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-lg">
+                <p>Humidity: <span id="humidity" class="font-semibold"></span>%</p>
+                <p>Wind Speed: <span id="windSpeed" class="font-semibold"></span></p> <!-- Wind speed will now include direction -->
+                <!-- Compass is now here, directly in the grid -->
+                <div id="compass-container">
+                    <div id="compass" class="flex justify-center items-center">
+                        <div class="compass-direction north">N</div>
+                        <div class="compass-direction east">E</div>
+                        <div class="compass-direction south">S</div>
+                        <div class="compass-direction west">W</div>
+                        <div id="wind-needle"></div>
+                        <div id="compass-center"></div>
+                    </div>
+                    <p id="compassLabel">Wind Direction</p>
+                </div>
+                <p>Wind Gust: <span id="windGust" class="font-semibold">N/A</span> m/s</p>
+                <p>Cloudiness: <span id="cloudiness" class="font-semibold"></span>%</p>
+                <p>Precipitation (last 1h): <span id="precipitation" class="font-semibold">N/A</span> mm</p>
+            </div>
+
+            <!-- Buttons for optional sections -->
+            <div class="flex flex-wrap justify-center gap-4 mt-8">
+                <button
+                    id="getFarmingAdviceBtn"
+                    class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+                >
+                    Show Farming Advice 🌿
+                </button>
+            </div>
+
+            <div id="detailedFarmingSuggestions" class="mt-6 text-left hidden">
+                <h3 class="text-xl font-bold mb-3">Detailed Farming Advice</h3>
+                <ul id="detailedSuggestionsList" class="list-disc list-inside">
+                </ul>
+            </div>
+
+            <div id="farmingSummary" class="mt-6 text-left hidden">
+                <h3 class="text-xl font-bold mb-3">Farming Activity Suitability</h3>
+                <ul id="activityList" class="list-none p-0">
+                </ul>
+            </div>
+
+            <!-- Unified section for Weather Assistant powered general advice -->
+            <div class="flex flex-col sm:flex-row gap-4 mt-6 input-section">
+                <input
+                    type="text"
+                    id="geminiQueryInput"
+                    placeholder="Ask about weather (e.g., 'Is this good weather for a picnic?', 'How does humidity affect crops?')..."
+                    class="flex-grow p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-700"
+                />
+                <button
+                    id="askGeminiBtn"
+                    class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105"
+                >
+                    Ask Weather Assistant ✨
+                </button>
+            </div>
+
+            <div id="geminiOutputSection" class="mt-6 text-left hidden">
+                <h3 class="text-xl font-bold mb-3">Weather Assistant's Answer</h3>
+                <div id="geminiOutput">
+                    <!-- LLM generated advice will be displayed here -->
+                </div>
+                <div id="geminiLoading" class="hidden flex justify-center items-center mt-4">
+                    <div class="loading-spinner"></div>
+                    <span class="ml-3 text-white text-opacity-80">Getting weather insights...</span>
+                </div>
+                <div id="geminiError" class="hidden text-red-600 text-sm mt-2">
+                    <p id="geminiErrorText"></p>
+                </div>
+            </div>
+
+        </div>
+
+        <p id="featureText" class="text-lg mt-4 text-center mx-auto max-w-2xl"></p> <!-- Moved feature text -->
+
+        <div id="errorMessage" >
+            <p id="errorText"></p>
+        </div>
+    </div>
+
+    <script>
+        // IMPORTANT: Replace 'bb6c46462f1b72b8387a9e1744fe01e9' with your actual OpenWeatherMap API key.
+        // You can get one for free at: https://openweathermap.org/api
+        const OPENWEATHER_API_KEY = 'bb6c46462f1b72b8387a9e1744fe01e9'.trim(); // Trim any potential whitespace
+        const WEATHER_BASE_URL = 'https://api.openweathermap.org/data/2.5/weather';
+        const GEOCODING_BASE_URL = 'https://api.openweathermap.org/geo/1.0/direct';
+
+
+        // IMPORTANT: Gemini API Key provided by the user.
+        const GEMINI_API_KEY = "AIzaSyDB0QPB5fb7tJZ8HvrpisPWvC_HNZ3fFlc"; // User-provided API key
+
+        const cityInput = document.getElementById('cityInput');
+        const citySuggestionsDatalist = document.getElementById('citySuggestions');
+        const fetchWeatherBtn = document.getElementById('fetchWeatherBtn');
+        const weatherDisplay = document.getElementById('weatherDisplay');
+        const cityNameElem = document.getElementById('cityName');
+        const temperatureElem = document.getElementById('temperature');
+        const descriptionElem = document.getElementById('description');
+        const humidityElem = document.getElementById('humidity');
+        const windSpeedElem = document.getElementById('windSpeed');
+        const windGustElem = document.getElementById('windGust');
+        const cloudinessElem = document.getElementById('cloudiness');
+        const precipitationElem = document.getElementById('precipitation');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorTextElem = document.getElementById('errorText');
+        const detailedSuggestionsListElem = document.getElementById('detailedSuggestionsList');
+        const activityListElem = document.getElementById('activityList');
+        const weatherIconElem = document.getElementById('weatherIcon');
+
+        // Elements for Farming Advice button and sections
+        const getFarmingAdviceBtn = document.getElementById('getFarmingAdviceBtn');
+        const detailedFarmingSuggestions = document.getElementById('detailedFarmingSuggestions');
+        const farmingSummary = document.getElementById('farmingSummary');
+
+        // New elements for unified Weather Assistant integration
+        const geminiQueryInput = document.getElementById('geminiQueryInput');
+        const askGeminiBtn = document.getElementById('askGeminiBtn');
+        const geminiOutputSection = document.getElementById('geminiOutputSection');
+        const geminiOutput = document.getElementById('geminiOutput');
+        const geminiLoading = document.getElementById('geminiLoading');
+        const geminiError = document.getElementById('geminiError');
+        const geminiErrorText = document.getElementById('geminiErrorText');
+
+        // Compass elements
+        const compass = document.getElementById('compass'); // The compass container itself
+        const windNeedle = document.getElementById('wind-needle'); // The wind needle element
+
+        // Header elements for dynamic styling
+        const logoHeader = document.getElementById('logoHeader');
+        const mainHeader = document.getElementById('mainHeader');
+        const searchBarSection = document.getElementById('searchBarSection');
+        const featureTextElem = document.getElementById('featureText'); // Feature text element
+
+
+        let debounceTimeout;
+        let currentWeatherData = null; // Store current weather data for LLM advice features
+        let isHeaderTransformed = false; // New flag to control header persistence
+
+        // New: Features array for dynamic display
+        const features = [
+            "Accurate Global Forecasts 🌍",
+            "AI-Powered Farming Advice 🌾",
+            "Real-time Weather Assistant ✨",
+            "Detailed Wind Direction 🧭",
+            "Interactive Weather Insights 📊",
+            "Professional Weather Insights 📈",
+            "Agricultural Guidance  ",
+            "AI-Powered Weather Assistant 🤖"
+        ];
+        let currentFeatureIndex = 0;
+        let featureInterval;
+
+        /**
+         * Maps OpenWeatherMap icon codes to official OpenWeatherMap image URLs.
+         * @param {string} iconCode - The icon code from OpenWeatherMap API (e.g., "01d", "04n").
+         * @returns {string} The URL of the corresponding weather icon.
+         */
+        function getWeatherIconUrl(iconCode) {
+            // OpenWeatherMap provides icons at this base URL
+            return `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+        }
+
+        /**
+         * Sets the background gradient of the body based on weather conditions.
+         * Also applies a specific animation for each weather type.
+         * @param {string} weatherMain - The main weather condition (e.g., "Clear", "Rain", "Clouds").
+         */
+        function setDynamicBackground(weatherMain) {
+            let gradient;
+            let animationName;
+            let animationDuration = '10s'; // Default animation duration
+
+            switch (weatherMain) {
+                case 'Clear':
+                    // Bright, vibrant sky with subtle shifts
+                    gradient = 'linear-gradient(135deg, #87CEEB 0%, #E0FFFF 50%, #4682B4 100%)'; /* Sky Blue to Azure to Steel Blue */
+                    animationName = 'clearSkyAnimation';
+                    animationDuration = '15s'; // Slower, more gentle for clear skies
+                    break;
+                case 'Clouds':
+                    // Dynamic cloudy sky with shifting grays and blues
+                    gradient = 'linear-gradient(45deg, #B0C4DE 0%, #778899 30%, #696969 70%, #4F4F4F 100%)'; /* Light Steel Blue to Light Slate Gray to Dim Gray to Gray */
+                    animationName = 'cloudyAnimation';
+                    animationDuration = '20s'; // Slow, drifting clouds
+                    break;
+                case 'Rain':
+                case 'Drizzle':
+                    // Darker, flowing gradient for rain
+                    gradient = 'linear-gradient(180deg, #4682B4 0%, #36454F 100%)'; /* Steel Blue to Charcoal */
+                    animationName = 'rainyAnimation';
+                    animationDuration = '8s'; // Faster, more active for rain
+                    break;
+                case 'Thunderstorm':
+                    // Intense, dark gradient for storms
+                    gradient = 'linear-gradient(225deg, #2F4F4F 0%, #1A202C 100%)'; /* Dark Slate Gray to Dark Grey/Almost Black */
+                    animationName = 'stormyAnimation';
+                    animationDuration = '6s'; // Quick, turbulent for storms
+                    break;
+                case 'Snow':
+                    // Soft, cool gradient for snow
+                    gradient = 'linear-gradient(90deg, #F0F8FF 0%, #ADD8E6 50%, #B0C4DE 100%)'; /* Alice Blue to Light Blue to Light Steel Blue */
+                    animationName = 'snowyAnimation';
+                    animationDuration = '18s'; // Gentle, slow for snow
+                    break;
+                case 'Mist':
+                case 'Fog':
+                case 'Haze':
+                    // Muted, hazy gradient
+                    gradient = 'linear-gradient(0deg, #A9A9A9 0%, #778899 100%)'; /* Dark Gray to Light Slate Gray */
+                    animationName = 'hazyAnimation';
+                    animationDuration = '25s'; // Very slow, subtle for haze
+                    break;
+                default:
+                    gradient = 'linear-gradient(135deg, #87CEEB 0%, #E0FFFF 100%)'; /* Default clear sky */
+                    animationName = 'gradientShift';
+                    animationDuration = '10s';
+            }
+            document.body.style.background = gradient;
+            document.body.style.animation = `${animationName} ${animationDuration} ease infinite alternate`;
+        }
+
+        /**
+         * Converts wind degrees to a cardinal direction.
+         * @param {number} degrees - Wind direction in degrees (0-360).
+         * @returns {string} Cardinal direction (e.g., "N", "NE", "E").
+         */
+        function degreesToCardinal(degrees) {
+            const directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+            const index = Math.round(degrees / (360 / directions.length)) % directions.length;
+            return directions[index];
+        }
+
+        /**
+         * Updates the compass display with wind direction and speed.
+         * @param {number} windDeg - Wind direction in degrees.
+         * @param {number} windSpeed - Wind speed in m/s.
+         */
+        function updateCompass(windDeg, windSpeed) {
+            // The wind needle rotates to the absolute wind direction
+            windNeedle.style.transform = `translateX(-50%) rotate(${windDeg}deg)`;
+            compass.classList.remove('hidden'); // Show the compass
+            const cardinalDirection = degreesToCardinal(windDeg);
+            windSpeedElem.innerHTML = `<span class="font-semibold">${windSpeed.toFixed(1)} m/s (${cardinalDirection})</span>`;
+        }
+
+
+        /**
+         * Checks if the OpenWeatherMap API key is valid or a known placeholder.
+         * @returns {boolean} True if the API key is valid, false otherwise.
+         */
+        function isOpenWeatherApiKeyValid() {
+            console.log('OpenWeatherMap API Key in code:', OPENWEATHER_API_KEY); // Log the key for debugging
+            // If the key is empty or too short, it's likely invalid.
+            // We are no longer specifically checking against 'bb6c46462f1b72b8387a9e1744fe01e9' as the user states it's valid.
+            if (!OPENWEATHER_API_KEY || OPENWEATHER_API_KEY.length < 10) { // A basic length check for a typical API key
+                console.error('OpenWeatherMap API Key is missing or invalid. Please ensure it is correctly set in the code.');
+                errorTextElem.textContent = 'OpenWeatherMap API Key is missing or invalid. Please ensure it is correctly set.';
+                errorMessage.classList.remove('hidden'); // Ensure it's visible if there's an issue
+                return false;
+            }
+            // If the key is present and passes a basic length check, hide any existing error message.
+            errorMessage.classList.add('hidden');
+            return true;
+        }
+
+        /**
+         * Fetches weather data for a given city from the OpenWeatherMap API.
+         * @param {string} city - The name of the city.
+         * @returns {Promise<object|null>} - A promise that resolves to the weather data object or null on error.
+         */
+        async function fetchWeatherData(city) {
+            if (!isOpenWeatherApiKeyValid()) {
+                return null;
+            }
+
+            const url = `${WEATHER_BASE_URL}?q=${city}&appid=${OPENWEATHER_API_KEY}&units=metric`;
+            try {
+                loadingIndicator.classList.remove('hidden');
+                errorMessage.classList.add('hidden'); // Hide error message at the start of fetch
+                weatherDisplay.classList.add('hidden'); // Hide before fetch to re-animate on display
+                geminiOutputSection.classList.add('hidden'); // Hide Weather Assistant output section
+                detailedFarmingSuggestions.classList.add('hidden'); // Hide farming advice sections
+                farmingSummary.classList.add('hidden'); // Hide farming advice sections
+                compass.classList.add('hidden'); // Hide compass section
+
+
+                const response = await fetch(url);
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error(`Unauthorized: Please check your OpenWeatherMap API key. It might be incorrect or not yet activated. Status: ${response.status}`);
+                    } else if (response.status === 404) {
+                        throw new Error(`City not found: ${city}. Status: ${response.status}`);
+                    } else {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                }
+                const data = await response.json();
+                currentWeatherData = data; // Store the fetched data
+                return data;
+            } catch (error) {
+                console.error('Error fetching weather data:', error);
+                if (error.message.includes('Unauthorized')) {
+                    errorTextElem.textContent = error.message + ' Please ensure your API key is correct and has been active for at least 10-30 minutes.';
+                } else if (error.message.includes('City not found')) {
+                    errorTextElem.textContent = 'City not found. Please check the city name and try again.';
+                } else {
+                    errorTextElem.textContent = `Could not fetch weather data. Please try again later. (Error: ${error.message})`;
+                }
+                errorMessage.classList.remove('hidden');
+                return null;
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Fetches city suggestions from the OpenWeatherMap Geocoding API.
+         * @param {string} query - The partial city name entered by the user.
+         * @returns {Promise<Array<object>>} - A promise that resolves to an array of city objects.
+         */
+        async function fetchCitySuggestions(query) {
+            if (!isOpenWeatherApiKeyValid() || query.length < 1) {
+                citySuggestionsDatalist.innerHTML = '';
+                return [];
+            }
+
+            // Using direct geocoding for suggestions
+            const url = `${GEOCODING_BASE_URL}?q=${query}&limit=20&appid=${OPENWEATHER_API_KEY}`;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    console.error(`Error fetching city suggestions: HTTP error! Status: ${response.status}`);
+                    return [];
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching city suggestions:', error);
+                return [];
+            }
+        }
+
+        /**
+         * Populates the datalist with city suggestions.
+         * @param {Array<object>} suggestions - An array of city objects.
+         */
+        function populateCitySuggestions(suggestions) {
+            citySuggestionsDatalist.innerHTML = '';
+            suggestions.forEach(city => {
+                const option = document.createElement('option');
+                let displayName = city.name;
+                if (city.state) {
+                    displayName += `, ${city.state}`;
+                }
+                if (city.country) {
+                    displayName += `, ${city.country}`;
+                }
+                option.value = displayName;
+                citySuggestionsDatalist.appendChild(option);
+            });
+        }
+
+        /**
+         * Generates detailed farming-related suggestions based on weather data.
+         * @param {object} weatherData - The weather data object.
+         * @returns {Array<string>} An array of detailed farming suggestions.
+         */
+        function generateDetailedFarmingSuggestions(weatherData) {
+            const suggestions = [];
+            const temp = weatherData.main.temp;
+            const humidity = weatherData.main.humidity;
+            const windSpeed = weatherData.wind.speed;
+            const weatherMain = weatherData.weather[0].main; // e.g., "Clear", "Rain", "Clouds"
+            const rainVolume = weatherData.rain && weatherData.rain['1h'] ? weatherData.rain['1h'] : 0;
+            const cloudiness = weatherData.clouds ? weatherData.clouds.all : 0;
+            const windGust = weatherData.wind && weatherData.wind.gust ? weatherData.wind.gust : 0;
+
+            if (temp > 10 && temp < 30 && windSpeed < 5 && rainVolume === 0) {
+                suggestions.push("Today offers excellent conditions for general outdoor farming activities. The moderate temperature and low wind make it comfortable for working in the fields, and with no rain expected, tasks like soil preparation or light planting can proceed smoothly.");
+            } else if (temp < 5) {
+                suggestions.push("Temperatures are low. Consider delaying planting or other sensitive tasks. Protect young plants from potential cold stress or frost, especially overnight.");
+            } else if (temp > 35) {
+                suggestions.push("High temperatures. Avoid strenuous outdoor work during peak heat. Ensure adequate irrigation to prevent crop wilting and provide shade if possible.");
+            }
+
+            if (rainVolume === 0 && windSpeed < 3 && windGust < 5 && cloudiness < 70) {
+                suggestions.push("Conditions are favorable for applying pesticides or fertilizers. The low wind speed minimizes drift, ensuring the product reaches its target effectively. No rain means it's won't be washed away immediately.");
+            } else if (rainVolume > 0) {
+                suggestions.push("Rain is present or expected. It's best to avoid spraying pesticides or fertilizers as they will likely be washed off, reducing effectiveness and potentially contaminating runoff.");
+            } else if (windSpeed >= 5 || windGust >= 7) {
+                suggestions.push("Strong winds are present. Do not spray pesticides or fertilizers today to prevent significant drift, which can lead to uneven application and harm to non-target areas or crops.");
+            }
+
+            if (rainVolume === 0 && humidity < 60 && temp > 20) {
+                suggestions.push("The weather is dry and warm. Consider irrigating your crops today, particularly those that are highly water-dependent. Monitor soil moisture levels closely.");
+            } else if (rainVolume > 0) {
+                suggestions.push("Natural precipitation is occurring. There is no immediate need for irrigation, saving water and resources.");
+            }
+
+            if (rainVolume === 0 && (weatherMain === 'Clear' || (weatherMain === 'Clouds' && cloudiness < 50))) {
+                suggestions.push("Ideal conditions for harvesting, especially for crops that require dry conditions. Clear skies ensure good visibility and prevent moisture-related issues during collection.");
+            } else if (rainVolume > 0) {
+                suggestions.push("Rain is present. It's advisable to delay harvesting, especially for crops sensitive to moisture, to prevent spoilage or damage.");
+            }
+
+            if (temp < 5 && cloudiness < 30) {
+                suggestions.push("There is a risk of frost tonight due to low temperatures and clear skies. Take proactive measures to protect sensitive crops, such as covering them or using irrigation for warmth.");
+            }
+
+            if (suggestions.length === 0) {
+                suggestions.push("No specific detailed farming advice available based on current conditions. Please monitor weather closely for changes.");
+            }
+
+            return suggestions;
+        }
+
+        /**
+         * Evaluates suitability for various farming activities based on weather data, returning a summary.
+         * @param {object} weatherData - The weather data object.
+         * @returns {Array<{activity: string, suitable: boolean, reason: string}>} An array of activity suitability.
+         */
+        function evaluateFarmingActivitiesSummary(weatherData) {
+            const activities = [];
+            const temp = weatherData.main.temp;
+            const humidity = weatherData.main.humidity;
+            const windSpeed = weatherData.wind.speed;
+            const weatherMain = weatherData.weather[0].main; // e.g., "Clear", "Rain", "Clouds"
+            const rainVolume = weatherData.rain && weatherData.rain['1h'] ? weatherData.rain['1h'] : 0;
+            const cloudiness = weatherData.clouds ? weatherData.clouds.all : 0;
+            const windGust = weatherData.wind && weatherData.wind.gust ? weatherData.wind.gust : 0;
+
+            // Activity: Planting
+            if (temp >= 10 && temp <= 25 && rainVolume === 0 && windSpeed < 7) {
+                activities.push({ activity: "Planting", suitable: true, reason: "Moderate temperatures, no rain, and light winds create ideal conditions for planting." });
+            } else if (temp < 10) {
+                activities.push({ activity: "Planting", suitable: false, reason: "Temperatures are too low; risk of frost or slow germination." });
+            } else if (temp > 25) {
+                activities.push({ activity: "Planting", suitable: false, reason: "High temperatures can stress young plants and require excessive irrigation." });
+            } else if (rainVolume > 0) {
+                activities.push({ activity: "Planting", suitable: false, reason: "Rain can make soil too wet for planting and cause compaction." });
+            } else if (windSpeed >= 7) {
+                activities.push({ activity: "Planting", suitable: false, reason: "Strong winds can damage young seedlings and make planting difficult." });
+            } else {
+                activities.push({ activity: "Planting", suitable: false, reason: "Conditions are not optimal for planting." });
+            }
+
+            // Activity: Spraying (Pesticides/Fertilizers)
+            if (rainVolume === 0 && windSpeed < 5 && windGust < 7 && cloudiness < 80 && temp > 5 && temp < 30) {
+                activities.push({ activity: "Spraying", suitable: true, reason: "No rain, low wind, and moderate temperatures ensure effective application and minimal drift." });
+            } else if (rainVolume > 0) {
+                activities.push({ activity: "Spraying", suitable: false, reason: "Rain will wash off sprays and reduce effectiveness." });
+            } else if (windSpeed >= 5 || windGust >= 7) {
+                activities.push({ activity: "Spraying", suitable: false, reason: "High winds cause spray drift, leading to uneven coverage and potential harm to non-target areas." });
+            } else if (temp <= 5 || temp >= 30) {
+                activities.push({ activity: "Spraying", suitable: false, reason: "Extreme temperatures can affect product efficacy or plant health." });
+            } else {
+                activities.push({ activity: "Spraying", suitable: false, reason: "Conditions are not ideal for spraying." });
+            }
+
+            // Activity: Irrigation
+            if (rainVolume === 0 && humidity < 70 && temp > 20) {
+                activities.push({ activity: "Irrigation", suitable: true, reason: "Dry and warm conditions indicate a need for irrigation to prevent crop stress." });
+            } else if (rainVolume > 0) {
+                activities.push({ activity: "Irrigation", suitable: false, reason: "Natural rainfall provides sufficient moisture; irrigation is not needed." });
+            } else {
+                activities.push({ activity: "Irrigation", suitable: true, reason: "Monitor soil moisture; irrigation might be beneficial depending on crop needs." });
+            }
+
+            // Activity: Harvesting
+            if (rainVolume === 0 && (weatherMain === 'Clear' || (weatherMain === 'Clouds' && cloudiness < 50))) {
+                activities.push({ activity: "Harvesting", suitable: true, reason: "Dry conditions and moderate temperatures are ideal for harvesting, especially for crops requiring low moisture." });
+            } else if (rainVolume > 0) {
+                activities.push({ activity: "Harvesting", suitable: false, reason: "Rain can damage crops during harvest and increase moisture content, affecting storage." });
+            } else if (temp <= 5 || temp >= 30) {
+                activities.push({ activity: "Harvesting", suitable: false, reason: "Extreme temperatures can impact crop quality or make harvesting difficult." });
+            } else {
+                activities.push({ activity: "Harvesting", suitable: false, reason: "Conditions are not optimal for harvesting." });
+            }
+
+            // Activity: Tillage/Soil Preparation
+            if (rainVolume === 0 && humidity < 80 && temp > 5 && temp < 30 && windSpeed < 10) {
+                activities.push({ activity: "Tillage/Soil Preparation", suitable: true, reason: "Dry soil and moderate temperatures allow for efficient tillage and seedbed preparation." });
+            } else if (rainVolume > 0) {
+                activities.push({ activity: "Tillage/Soil Preparation", suitable: false, reason: "Wet soil can lead to compaction and poor soil structure if tilled." });
+            } else if (windSpeed >= 10) {
+                activities.push({ activity: "Tillage/Soil Preparation", suitable: false, reason: "Strong winds can cause soil erosion during tillage." });
+            } else {
+                activities.push({ activity: "Tillage/Soil Preparation", suitable: false, reason: "Conditions are not optimal for tillage." });
+            }
+
+            return activities;
+        }
+
+
+        /**
+         * Displays the fetched weather data on the page.
+         * @param {object} data - The weather data object.
+         */
+        function displayWeatherData(data) {
+            errorMessage.classList.add('hidden'); // Ensure error is hidden when data is displayed
+            setDynamicBackground(data.weather[0].main);
+
+            cityNameElem.textContent = `${data.name}, ${data.sys.country}`;
+            temperatureElem.textContent = `${Math.round(data.main.temp)}°C`;
+            descriptionElem.textContent = data.weather[0].description;
+            humidityElem.textContent = data.main.humidity;
+            // Wind speed and direction updated via updateCompass
+            windGustElem.textContent = data.wind.gust ? data.wind.gust.toFixed(1) : 'N/A';
+            cloudinessElem.textContent = data.clouds ? data.clouds.all : 'N/A';
+            precipitationElem.textContent = data.rain && data.rain['1h'] ? data.rain['1h'].toFixed(1) : '0.0';
+
+            weatherIconElem.src = getWeatherIconUrl(data.weather[0].icon);
+            weatherIconElem.alt = data.weather[0].description;
+
+            weatherDisplay.classList.remove('hidden');
+            // Reset animations by re-adding classes (browser will re-render and re-animate)
+            weatherDisplay.style.animation = 'none';
+            void weatherDisplay.offsetWidth; // Trigger reflow
+            weatherDisplay.style.animation = null;
+
+            // Update and show compass
+            if (data.wind && typeof data.wind.deg !== 'undefined' && typeof data.wind.speed !== 'undefined') {
+                updateCompass(data.wind.deg, data.wind.speed);
+            } else {
+                compass.classList.add('hidden'); // Hide if no wind data
+                windSpeedElem.innerHTML = `<span class="font-semibold">N/A</span>`; // Reset wind speed if no data
+            }
+        }
+
+        /**
+         * Displays farming advice based on the current weather data.
+         */
+        function displayFarmingAdvice() {
+            if (!currentWeatherData) {
+                errorTextElem.textContent = "Please fetch weather data first to get farming advice.";
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+
+            // Clear previous advice
+            detailedSuggestionsListElem.innerHTML = '';
+            activityListElem.innerHTML = '';
+
+            // Generate and display detailed suggestions
+            const detailedSuggestions = generateDetailedFarmingSuggestions(currentWeatherData);
+            detailedSuggestions.forEach(suggestion => {
+                const li = document.createElement('li');
+                li.textContent = suggestion;
+                detailedSuggestionsListElem.appendChild(li);
+            });
+            detailedFarmingSuggestions.classList.remove('hidden');
+            detailedFarmingSuggestions.style.animation = 'none';
+            void detailedFarmingSuggestions.offsetWidth;
+            detailedFarmingSuggestions.style.animation = null;
+
+            // Generate and display activity suitability summary
+            const farmingActivities = evaluateFarmingActivitiesSummary(currentWeatherData);
+            farmingActivities.forEach(activity => {
+                const li = document.createElement('li');
+                li.classList.add('summary-item');
+                const icon = activity.suitable ? '✅' : '❌';
+                li.innerHTML = `<span class="mr-2">${icon}</span> <strong>${activity.activity}:</strong> ${activity.reason}`;
+                activityListElem.appendChild(li);
+            });
+            farmingSummary.classList.remove('hidden');
+            farmingSummary.style.animation = 'none';
+            void farmingSummary.offsetWidth;
+            farmingSummary.style.animation = null;
+        }
+
+        /**
+         * Calls the Gemini API to get weather-related insights.
+         * @param {string} query - The user's query.
+         * @param {object} weatherData - The current weather data.
+         */
+        async function getGeminiWeatherInsight(query, weatherData) {
+            geminiOutput.innerHTML = '';
+            geminiError.classList.add('hidden');
+            geminiLoading.classList.remove('hidden');
+            geminiOutputSection.classList.remove('hidden');
+            geminiOutputSection.style.animation = 'none';
+            void geminiOutputSection.offsetWidth;
+            geminiOutputSection.style.animation = null;
+
+            if (!GEMINI_API_KEY || GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY') {
+                geminiErrorText.textContent = 'Gemini API Key is missing or not replaced. Please provide a valid API key.';
+                geminiError.classList.remove('hidden');
+                geminiLoading.classList.add('hidden');
+                return;
+            }
+
+            const prompt = `Given the following current weather conditions for ${weatherData.name}, ${weatherData.sys.country}:
+            Temperature: ${weatherData.main.temp}°C
+            Feels like: ${weatherData.main.feels_like}°C
+            Humidity: ${weatherData.main.humidity}%
+            Pressure: ${weatherData.main.pressure} hPa
+            Wind Speed: ${weatherData.wind.speed} m/s
+            Wind Gust: ${weatherData.wind.gust ? weatherData.wind.gust + ' m/s' : 'N/A'}
+            Cloudiness: ${weatherData.clouds ? weatherData.clouds.all : '0'}%
+            Visibility: ${weatherData.visibility ? weatherData.visibility + ' meters' : 'N/A'}
+            Weather Description: ${weatherData.weather[0].description} (${weatherData.weather[0].main})
+            Precipitation (last 1h): ${weatherData.rain && weatherData.rain['1h'] ? weatherData.rain['1h'] + ' mm' : '0 mm'}
+
+            User's question: "${query}"
+
+            Please provide a helpful and concise answer based on the weather data. If the question is about farming, provide insights relevant to agriculture. If it's a general question, answer it directly. If the question cannot be answered based on weather data, state that.`;
+
+            try {
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = GEMINI_API_KEY; // Use the provided API key
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`API error: ${response.status} - ${errorData.error.message || response.statusText}`);
+                }
+
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    geminiOutput.innerHTML = `<p class="text-white text-opacity-90">${text}</p>`; /* White text for Gemini output */
+                } else {
+                    geminiOutput.innerHTML = '<p class="text-white text-opacity-70">No specific insights could be generated for your query at this time. Please try rephrasing.</p>';
+                }
+            } catch (error) {
+                console.error('Error calling Gemini API:', error);
+                geminiErrorText.textContent = `Error getting weather insights: ${error.message}. Please try again.`;
+                geminiError.classList.remove('hidden');
+            } finally {
+                geminiLoading.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Displays the next feature in the sequence with a fade effect.
+         */
+        function displayNextFeature() {
+            featureTextElem.classList.remove('fade-in'); // Start fade out
+            setTimeout(() => {
+                featureTextElem.textContent = features[currentFeatureIndex];
+                featureTextElem.classList.add('fade-in'); // Fade in new text
+                currentFeatureIndex = (currentFeatureIndex + 1) % features.length;
+            }, 800); // Wait for fade out to complete before changing text and fading in
+        }
+
+
+        // Event Listeners
+        cityInput.addEventListener('input', (event) => {
+            clearTimeout(debounceTimeout);
+            errorMessage.classList.add('hidden'); // Hide error when user starts typing
+            const query = event.target.value.trim();
+            if (query.length > 0) {
+                debounceTimeout = setTimeout(async () => {
+                    const suggestions = await fetchCitySuggestions(query);
+                    populateCitySuggestions(suggestions);
+                }, 300); // Debounce for 300ms
+            } else {
+                citySuggestionsDatalist.innerHTML = ''; // Clear suggestions if input is empty
+            }
+        });
+
+        fetchWeatherBtn.addEventListener('click', async () => {
+            const city = cityInput.value.trim();
+            if (city) {
+                const weatherData = await fetchWeatherData(city);
+                if (weatherData) {
+                    displayWeatherData(weatherData);
+                    errorMessage.classList.add('hidden'); // Explicitly hide error on successful display
+                    // Hide farming and Gemini sections initially when new weather is fetched
+                    detailedFarmingSuggestions.classList.add('hidden');
+                    farmingSummary.classList.add('hidden');
+                    geminiOutputSection.classList.add('hidden');
+
+                    // Add the class to body to trigger the fixed header/search bar animation
+                    document.body.classList.add('scrolled-or-searched');
+                    isHeaderTransformed = true; // Set flag to true once transformed by button click
+                    clearInterval(featureInterval); // Stop feature rotation after search
+                    featureTextElem.classList.add('hidden'); // Hide feature text
+                }
+            } else {
+                errorTextElem.textContent = 'Please enter a city name.';
+                errorMessage.classList.remove('hidden');
+                weatherDisplay.classList.add('hidden');
+                detailedFarmingSuggestions.classList.add('hidden');
+                farmingSummary.classList.add('hidden');
+                geminiOutputSection.classList.add('hidden');
+            }
+        });
+
+        getFarmingAdviceBtn.addEventListener('click', () => {
+            displayFarmingAdvice();
+        });
+
+        askGeminiBtn.addEventListener('click', () => {
+            const query = geminiQueryInput.value.trim();
+            if (query && currentWeatherData) {
+                getGeminiWeatherInsight(query, currentWeatherData);
+            } else if (!currentWeatherData) {
+                geminiOutput.innerHTML = '';
+                geminiErrorText.textContent = "Please fetch weather data for a city first before asking the Weather Assistant.";
+                geminiError.classList.remove('hidden');
+                geminiOutputSection.classList.remove('hidden');
+            } else {
+                geminiOutput.innerHTML = '';
+                geminiErrorText.textContent = "Please enter a question for the Weather Assistant.";
+                geminiError.classList.remove('hidden');
+                geminiOutputSection.classList.remove('hidden');
+            }
+        });
+
+        // Add scroll listener to manage the 'scrolled-or-searched' class
+        window.addEventListener('scroll', () => {
+            if (isHeaderTransformed) {
+                // If the header has already transformed, do nothing on scroll
+                return;
+            }
+
+            const headerHeight = mainHeader.offsetHeight; // Get the full height of the header
+            // Apply 'scrolled-or-searched' if scrolled past a certain point
+            if (window.scrollY > (headerHeight - 50)) {
+                document.body.classList.add('scrolled-or-searched');
+                isHeaderTransformed = true; // Set flag to true once transformed by scroll
+                clearInterval(featureInterval); // Stop feature rotation on scroll
+                featureTextElem.classList.add('hidden'); // Hide feature text
+            }
+            // The 'else' block to remove the class is intentionally removed to make it sticky.
+        });
+
+        // Initial check for API key on load and set initial scroll state
+        window.onload = () => {
+            isOpenWeatherApiKeyValid();
+            // Start feature rotation on load
+            displayNextFeature(); // Display first feature immediately
+            featureInterval = setInterval(displayNextFeature, 4000); // Change every 4 seconds
+            // Trigger the scroll listener once on load to set initial state
+            // This will ensure the header transforms if the page is already scrolled down on load.
+            window.dispatchEvent(new Event('scroll'));
+        };
+
+    </script>
+</body>
+</html>
